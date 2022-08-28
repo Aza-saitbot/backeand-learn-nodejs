@@ -1,5 +1,12 @@
 import express, {Request,Response} from 'express'
 import {RequestWithBody, RequestWithParams, RequestWithParamsAndBody, RequestWithQuery} from "./types";
+import {QueryOrderModel} from "./models/QueryOrderModel";
+import {OrderViewModel} from "./models/OrderViewModel";
+import {CreateOrderModel} from "./models/CreateOrderModel";
+import {URIParamsOrderIdModel} from "./models/URIParamsOrderIdModel";
+import {UpdateOrderModel} from "./models/UpdateOrderModel";
+
+
 export const app = express()
 const port = 5000
 app.use(express.json())
@@ -37,7 +44,7 @@ app.get('/', (req, res) => {
 })
 
 
-app.get('/orders', (req:RequestWithQuery<{name:string}>, res:Response<Order[]>) => {
+app.get('/orders', (req:RequestWithQuery<QueryOrderModel>, res:Response<OrderViewModel[]>) => {
 
     let findOrders=db.orders
     if (req.query.name){
@@ -45,18 +52,21 @@ app.get('/orders', (req:RequestWithQuery<{name:string}>, res:Response<Order[]>) 
             i.name.indexOf(req.query.name as string)>-1
         )
     }
-    res.json(findOrders)
+    res.json(findOrders.map(dbOrder=>({
+        id:dbOrder.id,
+        name:dbOrder.name
+    })))
 
 })
 
-app.post('/orders', (req:RequestWithBody<{name:string}>, res:Response<Order>) => {
+app.post('/orders', (req:RequestWithBody<CreateOrderModel>, res:Response<OrderViewModel>) => {
 
     if (!req.body.name){
         res.sendStatus(HTTP_STATUSES.BAD_REQUEST_400)
         return;
     }
 
-    const createdOrder={
+    const createdOrder:Order={
         id:+(new Date()),
         name:req.body.name
     }
@@ -65,7 +75,7 @@ app.post('/orders', (req:RequestWithBody<{name:string}>, res:Response<Order>) =>
 
 })
 
-app.delete('/orders/:id', (req:RequestWithParams<{id:string}>, res) => {
+app.delete('/orders/:id', (req:RequestWithParams<URIParamsOrderIdModel>, res) => {
 
     if (!req.params.id){
         res.sendStatus(HTTP_STATUSES.NOT_CONTENT_204)
@@ -75,7 +85,7 @@ app.delete('/orders/:id', (req:RequestWithParams<{id:string}>, res) => {
     res.status(HTTP_STATUSES.NOT_CONTENT_204)
 })
 
-app.put('/orders/:id', (req:RequestWithParamsAndBody<{id:string},{name:string}>, res) => {
+app.put('/orders/:id', (req:RequestWithParamsAndBody<URIParamsOrderIdModel,UpdateOrderModel>, res) => {
 
     if (!req.params.id){
         res.sendStatus(HTTP_STATUSES.BAD_REQUEST_400)
